@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QCM Mathématique aléatoire</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    .question {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 20px;
+    }
+    .answers div {
+      background-color: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .correct {
+      background-color: #d4edda !important;
+      border-color: #28a745;
+    }
+    .wrong {
+      background-color: #f8d7da !important;
+      border-color: #dc3545;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    #score {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .message {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+
+  <script>
+    const questions = [
+      {
+        text: "Quelle est la dérivée de \\( f(x) = x^2 \\) ?",
+        answers: [
+          { text: "\\( 2x \\)", correct: true },
+          { text: "\\( x \\)", correct: false },
+          { text: "\\( x^2 \\)", correct: false }
+        ]
+      },
+      {
+        text: "Résoudre \\( x^2 = 9 \\)",
+        answers: [
+          { text: "\\( x = \\pm 3 \\)", correct: true },
+          { text: "\\( x = 3 \\)", correct: false },
+          { text: "\\( x = -3 \\)", correct: false }
+        ]
+      }
+    ];
+
+    let totalScore = 0;
+    let questionsCorrigees = new Set();
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function renderQuestions() {
+      const form = document.getElementById("qcm-form");
+      form.innerHTML = "";
+      totalScore = 0;
+      questionsCorrigees.clear();
+
+      questions.forEach((q, index) => {
+        const questionDiv = document.createElement("div");
+        questionDiv.className = "question";
+        const questionTitle = document.createElement("p");
+        questionTitle.innerHTML = `${index + 1}. ${q.text.replace(/^\d+\.\s*/, "")}`;
+        questionDiv.appendChild(questionTitle);
+
+        const answerContainer = document.createElement("div");
+        answerContainer.className = "answers";
+
+        const shuffledAnswers = [...q.answers];
+        shuffle(shuffledAnswers);
+
+        shuffledAnswers.forEach((ans, i) => {
+          const div = document.createElement("div");
+          div.id = `q${index}_a${i}`;
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${index}`;
+          input.value = ans.correct ? "true" : "false";
+          input.id = `q${index}i${i}`;
+          const label = document.createElement("label");
+          label.setAttribute("for", input.id);
+          label.innerHTML = ans.text;
+          div.appendChild(input);
+          div.appendChild(label);
+          answerContainer.appendChild(div);
+        });
+
+        questionDiv.appendChild(answerContainer);
+
+        const submitBtn = document.createElement("button");
+        submitBtn.type = "button";
+        submitBtn.textContent = "Soumettre";
+        submitBtn.onclick = () => corrigerQuestion(index, submitBtn);
+        questionDiv.appendChild(submitBtn);
+
+        const message = document.createElement("div");
+        message.id = `message-q${index}`;
+        message.className = "message";
+        questionDiv.appendChild(message);
+
+        form.appendChild(questionDiv);
+      });
+
+      const restartBtn = document.createElement("button");
+      restartBtn.textContent = "Recommencer le QCM";
+      restartBtn.onclick = renderQuestions;
+      form.appendChild(restartBtn);
+
+      updateScore();
+      MathJax.typeset();
+    }
+
+    function corrigerQuestion(index, bouton) {
+      const selected = document.querySelector(`input[name="q${index}"]:checked`);
+      const inputs = document.querySelectorAll(`input[name="q${index}"]`);
+      const messageDiv = document.getElementById(`message-q${index}`);
+      messageDiv.textContent = "";
+
+      if (!selected) {
+        messageDiv.textContent = "⚠️ Veuillez sélectionner une réponse avant de soumettre cette question.";
+        return;
+      }
+
+      inputs.forEach(input => input.disabled = true);
+
+      if (!questionsCorrigees.has(index)) {
+        if (selected.value === "true") {
+          totalScore++;
+          selected.parentElement.classList.add("correct");
+        } else {
+          selected.parentElement.classList.add("wrong");
+          const correctInput = [...inputs].find(i => i.value === "true");
+          if (correctInput) {
+            correctInput.parentElement.classList.add("correct");
+          }
+        }
+        questionsCorrigees.add(index);
+        updateScore();
+      }
+
+      bouton.disabled = true;
+    }
+
+    function updateScore() {
+      document.getElementById("score").textContent =
+        `Votre score est : ${totalScore} / ${questions.length}`;
+    }
+
+    window.onload = renderQuestions;
+  </script>
+
+  <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+
+<body>
+  <h2>QCM Mathématique</h2>
+  <form id="qcm-form"></form>
+  <div id="score"></div>
+</body>
+</html>
